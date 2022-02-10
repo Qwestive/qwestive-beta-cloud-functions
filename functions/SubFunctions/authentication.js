@@ -111,6 +111,13 @@ exports.userSignin = functions.https.onCall(async (data) => {
         {
           nonce: Math.floor(100000 + Math.random() * 900000),
           userName: uid,
+          displayName: "",
+          bio: "",
+          personalLink: "",
+          profileImage:
+            "https://firebasestorage.googleapis.com/v0/b/qwestive-beta-prod.appspot.com/o/defaultImages%2FprofileImage%2FprofilePic.png?alt=media&token=c58be011-b854-43c5-9fee-3606f44184d0",
+          coverImage:
+            "https://firebasestorage.googleapis.com/v0/b/qwestive-beta-prod.appspot.com/o/defaultImages%2FcoverImage%2FcoverPic.png?alt=media&token=4d20be09-f179-4414-94cd-be08ed6324d4",
         },
         { merge: true }
       );
