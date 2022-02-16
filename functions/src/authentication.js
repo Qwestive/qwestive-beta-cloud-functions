@@ -77,6 +77,7 @@ We verify that the message signed by the valet correspond to the message
 we wanted signed from the wallet
 
 TODO:
+- setup smarter default userInformation
 - if you are bored you can check validity of the input at the beginning
 if not valid it will return internal error either way
 */
