@@ -1,5 +1,5 @@
 const admin = require("firebase-admin");
-admin.initializeApp({ credential: admin.credential.applicationDefault() });
+admin.initializeApp();
 
 exports.authentication = require("./src/authentication");
 
