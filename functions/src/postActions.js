@@ -117,3 +117,9 @@ exports.downVote = functions.https.onCall(async (data, context) => {
     );
   }
 });
+
+/// Add a comment to the comment tree of a post
+// exports.addComment = functions.https.onCall(async (data, context) => {});
+
+/// Remove a comment from the comment tree of a post
+// exports.removeComment = functions.https.onCall(async (data, context) => {});
