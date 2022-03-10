@@ -53,51 +53,7 @@ service cloud.firestore {
     }
 
     match /comments/{commentId} {
-      function meetsCommentAuthorRequirements() {
-        let postData = get(/databases/$(database)/documents/posts/$(request.resource.data.postId));
-				let userData = get(/databases/$(database)/documents/users/$(request.auth.uid));
-
-				// author user id == id of current auth user
-				// author user name == id of current auth user
-				// author public key == public key of current auth user
-				// author profile image == profile image of current auth user
-				// author has access to post for which comment is created
-        return request.auth.uid == request.resource.data.authorUserId
-          && userData.data.userName == request.resource.data.authorUserName
-          && userData.data.publicKey == request.resource.data.authorPublicKey
-          && userData.data.profileImage == request.resource.data.authorProfileImageUrl
-          && postData != null
-          && postData.data.accessMinimumTokenBalance <= userData.data.tokenBalances[postData.data.accessTokenId];
-      }
-      
-      function meetsChildCommentRequirements() {
-        let parentCommentId = request.resource.data.parentCommentId;
-				let parentCommentData = get(/databases/$(database)/documents/comments/$(parentCommentId));
-
-        return parentCommentData.data.postId == request.resource.data.postId
-          && parentCommentData.data.depth + 1 == request.resource.data.depth;
-      }
-
-      function meetsTopLevelCommentRequirements() {
-        return request.resource.data.depth == 0 && request.resource.data.parentCommentId == '';
-      }
-
-      function meetsCommentFormatRequirements() {
-				// body is a string with a max number of characters
-				// upVoteUserIds did not change
-				// downVoteUserIds did not change
-				return request.resource.data.body.size() > 1 
-          && request.resource.data.body.size() < 1000
-          && request.resource.data.upVoteUserIds == []
-          && request.resource.data.downVoteUserIds == [];
-      }
-
-      allow create: if request.auth != null
-      								 && request.auth.uid != null
-      								 && meetsCommentAuthorRequirements() 
-                       && meetsCommentFormatRequirements()
-                       && (meetsTopLevelCommentRequirements() 
-                       			|| meetsChildCommentRequirements());
+      allow create: if request.auth != null;
 
       allow delete: if false;
 
