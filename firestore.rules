@@ -2,7 +2,7 @@ rules_version ='2'
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
-      allow write: if false;
+      allow create: if false;
 
       allow delete: if request.auth != null 
                     && request.auth.uid == userId;
@@ -16,6 +16,26 @@ service cloud.firestore {
                             
       allow read: if true;
     }
+     match /community/{cId} {
+      allow create: if false;
+
+      allow delete: if false;
+
+      allow update: if false;
+                            
+      allow read: if request.auth != null;
+    }
+    // Do check of tokens
+    match /postPreviews/{postId} {
+      allow create: if request.auth != null;
+
+      allow delete: if false;
+
+      allow update: if false;
+                            
+      allow read: if request.auth != null;
+    }
+
     match /posts/{postId} {
       function meetsTokenRequirements() {
       	let postData = get(/databases/$(database)/documents/posts/$(postId));
@@ -23,7 +43,7 @@ service cloud.firestore {
         return postData.data.accessMinimumTokenBalance <= userData.data.tokenBalances[postData.data.accessTokenId];
       }
 
-      allow create: if true;
+      allow create: if request.auth != null;
 
       allow delete: if true;
 
@@ -31,6 +51,7 @@ service cloud.firestore {
                             
       allow read: if request.auth != null && meetsTokenRequirements();
     }
+
     match /comments/{commentId} {
       function meetsCommentAuthorRequirements() {
         let postData = get(/databases/$(database)/documents/posts/$(request.resource.data.postId));
@@ -85,7 +106,7 @@ service cloud.firestore {
       allow read: if request.auth != null;
     }
     match /categories/{categorie} {
-      allow write: if false;
+      allow create: if false;
 
       allow delete: if false;
 
@@ -93,5 +114,7 @@ service cloud.firestore {
                             
       allow read: if request.auth != null;
     }
+    
+   
   }
 }
