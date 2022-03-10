@@ -16,7 +16,7 @@ service cloud.firestore {
                             
       allow read: if true;
     }
-     match /community/{cId} {
+     match /communities/{cId} {
       allow create: if false;
 
       allow delete: if false;
@@ -37,11 +37,11 @@ service cloud.firestore {
     }
 
     match /posts/{postId} {
-      function meetsTokenRequirements() {
-      	let postData = get(/databases/$(database)/documents/posts/$(postId));
-        let userData = get(/databases/$(database)/documents/users/$(request.auth.uid));
-        return postData.data.accessMinimumTokenBalance <= userData.data.tokenBalances[postData.data.accessTokenId];
-      }
+     // function meetsTokenRequirements() {
+      //	let postData = get(/databases/$(database)/documents/posts/$(postId));
+      //  let userData = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      //  return postData.data.accessMinimumTokenBalance <= userData.data.tokenBalances[postData.data.accessTokenId];
+     // }
 
       allow create: if request.auth != null;
 
@@ -49,7 +49,7 @@ service cloud.firestore {
 
       allow update: if true;
                             
-      allow read: if request.auth != null && meetsTokenRequirements();
+      allow read: if request.auth != null ;// && meetsTokenRequirements();
     }
 
     match /comments/{commentId} {
