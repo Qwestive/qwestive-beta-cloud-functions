@@ -7,8 +7,8 @@ async function fetchCommunity(cid) {
   return {communityRef, communityDocSnap};
 }
 
-/// Triggered by post collection writes, this function initializes a new community
-/// in the community collection when the first post for a community is created.
+/// Triggered by post collection create, this function initializes a new community
+/// in the community collection when the first post for a token is created.
 exports.createPost = functions.firestore
   .document('posts/{docId}')
   .onCreate((snap, context) => {
@@ -18,7 +18,6 @@ exports.createPost = functions.firestore
 
     if (!communityDocSnap.exists) {
       await addDoc(collection(Firestore, 'communities', post.accessTokenId), {
-        name: 'name',
         categories: [{ name: post.category, count: 1 }],
       });
     } else {
