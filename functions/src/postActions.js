@@ -44,6 +44,25 @@ async function fetchAndValidatePost(postId) {
     return {postRef, postDocSnap};
 }
 
+async function fetchAndValidatePostPreview(postId) {
+  if (!(typeof postId === "string" || postId instanceof String)) {
+    // Throwing an HttpsError so that the client gets the error details.
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Provided Post ID is not a valid string"
+      );
+    }
+    const previewRef = admin.firestore().collection("postPreviews").doc(postId);
+    const previewDocSnap = await previewRef.get();
+    if (!previewDocSnap.exists) {
+      throw new functions.https.HttpsError(
+        "not-found",
+        `Provided Post Preview ID: ${postId} does not exist`
+      );
+    }
+    return {previewRef, previewDocSnap};
+}
+
 /// Add current user to the upvote list of a post.
 exports.upVote = functions.https.onCall(async (data, context) => {
     const uid = context.auth.uid;
@@ -51,6 +70,7 @@ exports.upVote = functions.https.onCall(async (data, context) => {
 
     // Get current user
     const {_, userDocSnap} = await fetchAndValidateUser(uid);
+
     // Get target post
     const {postRef, postDocSnap} = await fetchAndValidatePost(postId);
 
@@ -64,6 +84,10 @@ exports.upVote = functions.https.onCall(async (data, context) => {
         upVotes.push(uid);
         const downVotes = postDocSnap.data().downVoteUserIds.filter((item) => item !== uid);
         await postRef.set({ upVoteUserIds: upVotes, downVoteUserIds: downVotes }, { merge: true });
+        // TODO: add better error handling for the case when a post exists but it's preview
+        // can not be found.
+        const {postPreviewRef, _} = await fetchAndValidatePostPreview(postId);
+        await postPreviewRef.set({ upVoteUserIds: upVotes, downVoteUserIds: downVotes }, { merge: true });
         return {
           info: `Up vote for Post ID: ${postId} from User ID: ${uid} success`,
         };
@@ -101,6 +125,10 @@ exports.downVote = functions.https.onCall(async (data, context) => {
       downVotes.push(uid);
       const upVotes = postDocSnap.data().upVoteUserIds.filter((item) => item !== uid);
       await postRef.set({ upVoteUserIds: upVotes, downVoteUserIds: downVotes }, { merge: true });
+      // TODO: add better error handling for the case when a post exists but it's preview
+      // can not be found.
+      const {postPreviewRef, _} = await fetchAndValidatePostPreview(postId);
+      await postPreviewRef.set({ upVoteUserIds: upVotes, downVoteUserIds: downVotes }, { merge: true });
       return {
         info: `Down vote for Post ID: ${postId} from User ID: ${uid} success`,
       };
