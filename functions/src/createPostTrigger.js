@@ -11,13 +11,13 @@ async function fetchCommunity(cid) {
 /// in the community collection when the first post for a token is created.
 exports.createPost = functions.firestore
   .document('posts/{docId}')
-  .onCreate((snap, context) => {
-    const newPost = snap.data();
+  .onCreate(async (snap, context) => {
+    const post = snap.data();
 
-    const {communityRef, communityDocSnap} = fetchCommunity(post.accessTokenId);
+    const {communityRef, communityDocSnap} = await fetchCommunity(post.accessTokenId);
 
     if (!communityDocSnap.exists) {
-      await addDoc(collection(Firestore, 'communities', post.accessTokenId), {
+      await communityRef.set({
         categories: [{ name: post.category, count: 1 }],
       });
     } else {
