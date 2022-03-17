@@ -80,21 +80,29 @@ exports.upVote = functions.https.onCall(async (data, context) => {
   // Verify that user has access to the post to which this comment is associated.
   verifyUserMeetsTokenRequirements(userDocSnap.data(), postDocSnap.data());
 
+  await updateDoc(commentRef, {
+    upVoteUserIds: arrayUnion(uid),
+    downVoteUserIds: arrayRemove(uid)
+  });
   // Add user to upVote list if user is not already in upvote list.
   const upVotes = commentDocSnap.data().upVoteUserIds;
   if (upVotes.indexOf(uid) === -1) {
-    try {
-      const downVotes = commentDocSnap.data().downVoteUserIds.filter((item) => item !== uid);
-      await commentRef.set({ upVoteUserIds: [uid, ...upVotes], downVoteUserIds: downVotes }, { merge: true });
-      return {
-        info: `Up vote for Comment ID: ${commentId} from User ID: ${uid} success`,
-      };
-    } catch (error) {
-      throw new functions.https.HttpsError(
-        "unknown",
-        `Up vote for Comment ID: ${commentId} from User ID: ${uid} error: ${error?.message}`
-      );
-    }
+    await updateDoc(commentRef, {
+      upVoteUserIds: arrayUnion(uid),
+      downVoteUserIds: arrayRemove(uid)
+    });
+    // try {
+    //   const downVotes = commentDocSnap.data().downVoteUserIds.filter((item) => item !== uid);
+    //   await commentRef.set({ upVoteUserIds: [uid, ...upVotes], downVoteUserIds: downVotes }, { merge: true });
+    //   return {
+    //     info: `Up vote for Comment ID: ${commentId} from User ID: ${uid} success`,
+    //   };
+    // } catch (error) {
+    //   throw new functions.https.HttpsError(
+    //     "unknown",
+    //     `Up vote for Comment ID: ${commentId} from User ID: ${uid} error: ${error?.message}`
+    //   );
+    // }
   } else {
     throw new functions.https.HttpsError(
       "invalid-argument",
