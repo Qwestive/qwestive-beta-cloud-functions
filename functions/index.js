@@ -8,3 +8,5 @@ exports.userSettings = require("./src/userSettings");
 exports.postActions = require("./src/postActions");
 
 exports.createPostTrigger = require("./src/createPostTrigger");
+
+exports.verifyTokenOwned = require("./src/verifyTokenOwned");
