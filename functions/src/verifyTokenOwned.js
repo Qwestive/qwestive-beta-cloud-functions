@@ -36,24 +36,26 @@ exports.verifyTokenOwned = functions.https.onCall(async (data, context) => {
     }
   );
 
-  const filteredAccountTokens = [];
+  const filteredAccountTokens = new Map();
   for (let i = 0; i < accountTokens.length; i += 1) {
     const parsedAccountToken = accountTokens[i].account.data;
     if (
       parsedAccountToken?.parsed?.info?.mint !== undefined &&
       (parsedAccountToken?.parsed?.info?.tokenAmount?.uiAmount ?? 0) > 0
     )
-      filteredAccountTokens.push({
-        mint: parsedAccountToken.parsed.info.mint,
-        amountHeld: parsedAccountToken.parsed.info.tokenAmount.uiAmount,
-      });
+      filteredAccountTokens.set(
+        parsedAccountToken.parsed.info.mint,
+        parsedAccountToken.parsed.info.tokenAmount.uiAmount
+      );
   }
 
   const userRef = admin.firestore().collection("users").doc(context.auth.uid);
 
   // Changing Tokens owned
   try {
-    await userRef.update({ tokensOwned: filteredAccountTokens });
+    await userRef.update({
+      tokensOwned: Object.fromEntries(filteredAccountTokens),
+    });
     return {
       filteredAccountTokens,
     };
