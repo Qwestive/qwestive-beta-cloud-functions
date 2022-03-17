@@ -78,7 +78,7 @@ exports.upVote = functions.https.onCall(async (data, context) => {
   const {__, postDocSnap} = await fetchAndValidatePost(postId);
 
   // Verify that user has access to the post to which this comment is associated.
-  verifyUserMeetsTokenRequirements(userDocSnap.data(), postDocSnap.data()); 
+  verifyUserMeetsTokenRequirements(userDocSnap.data(), postDocSnap.data());
 
   // Add user to upVote list if user is not already in upvote list.
   const upVotes = commentDocSnap.data().upVoteUserIds;
