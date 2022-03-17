@@ -80,29 +80,16 @@ exports.upVote = functions.https.onCall(async (data, context) => {
   // Verify that user has access to the post to which this comment is associated.
   verifyUserMeetsTokenRequirements(userDocSnap.data(), postDocSnap.data());
 
-  await updateDoc(commentRef, {
-    upVoteUserIds: arrayUnion(uid),
-    downVoteUserIds: arrayRemove(uid)
-  });
   // Add user to upVote list if user is not already in upvote list.
   const upVotes = commentDocSnap.data().upVoteUserIds;
   if (upVotes.indexOf(uid) === -1) {
-    await updateDoc(commentRef, {
-      upVoteUserIds: arrayUnion(uid),
-      downVoteUserIds: arrayRemove(uid)
+    await commentRef.update({
+      upVoteUserIds: admin.firestore.FieldValue.arrayUnion(uid),
+      downVoteUserIds: admin.firestore.FieldValue.arrayRemove(uid)
     });
-    // try {
-    //   const downVotes = commentDocSnap.data().downVoteUserIds.filter((item) => item !== uid);
-    //   await commentRef.set({ upVoteUserIds: [uid, ...upVotes], downVoteUserIds: downVotes }, { merge: true });
-    //   return {
-    //     info: `Up vote for Comment ID: ${commentId} from User ID: ${uid} success`,
-    //   };
-    // } catch (error) {
-    //   throw new functions.https.HttpsError(
-    //     "unknown",
-    //     `Up vote for Comment ID: ${commentId} from User ID: ${uid} error: ${error?.message}`
-    //   );
-    // }
+    return {
+      info: `Up vote for Comment ID: ${commentId} from User ID: ${uid} success`,
+    };
   } else {
     throw new functions.https.HttpsError(
       "invalid-argument",
@@ -132,18 +119,13 @@ exports.downVote = functions.https.onCall(async (data, context) => {
   // Add user to downvote list if user is not already in downvote list.
   const downVotes = commentDocSnap.data().downVoteUserIds;
   if (downVotes.indexOf(uid) === -1) {
-    try {
-      const upVotes = commentDocSnap.data().upVoteUserIds.filter((item) => item !== uid);
-      await commentRef.set({ upVoteUserIds: upVotes, downVoteUserIds: [uid, ...downVotes] }, { merge: true });
-      return {
-        info: `Down vote for Comment ID: ${commentId} from User ID: ${uid} success`,
-      };
-    } catch (error) {
-      throw new functions.https.HttpsError(
-        "unknown",
-        `Down vote vote for Comment ID: ${commentId} from User ID: ${uid} error: ${error?.message}`
-      );
-    }
+    await commentRef.update({
+      downVoteUserIds: admin.firestore.FieldValue.arrayUnion(uid),
+      upVoteUserIds: admin.firestore.FieldValue.arrayRemove(uid)
+    });
+    return {
+      info: `Down vote for Comment ID: ${commentId} from User ID: ${uid} success`,
+    };
   } else {
     throw new functions.https.HttpsError(
       "invalid-argument",

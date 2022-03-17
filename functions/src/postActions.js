@@ -60,18 +60,13 @@ exports.upVote = functions.https.onCall(async (data, context) => {
   // Add user to upVote list if user is not already in upvote list.
   const upVotes = postDocSnap.data().upVoteUserIds;
   if (upVotes.indexOf(uid) === -1) {
-    try {
-      const downVotes = postDocSnap.data().downVoteUserIds.filter((item) => item !== uid);
-      await postRef.set({ upVoteUserIds: [uid, ...upVotes], downVoteUserIds: downVotes }, { merge: true });
-      return {
-        info: `Up vote for Post ID: ${postId} from User ID: ${uid} success`,
-      };
-    } catch (error) {
-      throw new functions.https.HttpsError(
-        "unknown",
-        `Up vote for Post ID: ${postId} from User ID: ${uid} error: ${error?.message}`
-      );
-    }
+    await postRef.update({
+      upVoteUserIds: admin.firestore.FieldValue.arrayUnion(uid),
+      downVoteUserIds: admin.firestore.FieldValue.arrayRemove(uid)
+    });
+    return {
+      info: `Up vote for Post ID: ${postId} from User ID: ${uid} success`,
+    };
   } else {
     throw new functions.https.HttpsError(
       "invalid-argument",
@@ -97,18 +92,13 @@ exports.downVote = functions.https.onCall(async (data, context) => {
   // Add user to up vote list if user is not already in upvote list.
   const downVotes = postDocSnap.data().downVoteUserIds;
   if (downVotes.indexOf(uid) === -1) {
-    try {
-      const upVotes = postDocSnap.data().upVoteUserIds.filter((item) => item !== uid);
-      await postRef.set({ upVoteUserIds: upVotes, downVoteUserIds: [uid, ...downVotes] }, { merge: true });
-      return {
-        info: `Down vote for Post ID: ${postId} from User ID: ${uid} success`,
-      };
-    } catch (error) {
-      throw new functions.https.HttpsError(
-        "unknown",
-        `Down vote vote for Post ID: ${postId} from User ID: ${uid} error: ${error?.message}`
-      );
-    }
+    await postRef.update({
+      downVoteUserIds: admin.firestore.FieldValue.arrayUnion(uid),
+      upVoteUserIds: admin.firestore.FieldValue.arrayRemove(uid)
+    });
+    return {
+      info: `Down vote for Post ID: ${postId} from User ID: ${uid} success`,
+    };
   } else {
     throw new functions.https.HttpsError(
       "invalid-argument",
