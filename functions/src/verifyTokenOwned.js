@@ -8,7 +8,7 @@ exports.verifyTokenOwned = functions.https.onCall(async (data, context) => {
     // Throwing an HttpsError so that the client gets the error details.
     throw new functions.https.HttpsError(
       "failed-precondition",
-      "The function must be called " + "while authenticated."
+      "The function must be called while authenticated."
     );
   }
   const TOKEN_PROGRAM_ID = new solana.PublicKey(
@@ -40,10 +40,8 @@ exports.verifyTokenOwned = functions.https.onCall(async (data, context) => {
   for (let i = 0; i < accountTokens.length; i += 1) {
     const parsedAccountToken = accountTokens[i].account.data;
     if (
-      parsedAccountToken.parsed !== undefined &&
-      parsedAccountToken.parsed.info.mint !== undefined &&
-      parsedAccountToken.parsed.info.tokenAmount.uiAmount !== undefined &&
-      parsedAccountToken.parsed.info.tokenAmount.uiAmount !== 0
+      parsedAccountToken?.parsed?.info?.mint !== undefined &&
+      (parsedAccountToken?.parsed?.info?.tokenAmount?.uiAmount ?? 0) > 0
     )
       filteredAccountTokens.push({
         mint: parsedAccountToken.parsed.info.mint,
