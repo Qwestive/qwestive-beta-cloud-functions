@@ -3,8 +3,8 @@ const admin = require("firebase-admin");
 
 function verifyUserMeetsTokenRequirements(userData, postData) {
     // Check that provided user meets required token balance.
-    if (postData.accessToken in userData.tokenBalances
-        && postData.accessMinimumTokenBalance <= userData.tokenBalances[postData.accessToken]) {
+    if (postData.accessToken in userData.tokensOwned
+        && postData.accessMinimumTokenBalance <= userData.tokensOwned[postData.accessToken]) {
       throw new functions.https.HttpsError(
         "permission-denied",
         "User does not meet minimum required token balance to vote on this post"
