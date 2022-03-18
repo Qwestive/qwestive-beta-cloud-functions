@@ -10,10 +10,10 @@ exports.updatePost = functions.firestore
 
   const updatedPost = change.after.data();
 
-  const postPreviewRef = admin.firestore().collection("postPreviews").doc(cid)
+  const postPreviewRef = admin.firestore().collection("postPreviews").doc(context.params.docId);
 
   await postPreviewRef.set({
     upVoteUserIds: updatedPost.upVoteUserIds,
     downVoteUserIds: updatedPost.downVoteUserIds
-  });
+  }, { merge: true });
 });
