@@ -13,4 +13,4 @@ exports.createPostTrigger = require("./src/createPostTrigger");
 
 exports.updatePostTrigger = require("./src/updatePostTrigger");
 
-exports.verifyTokenOwned = require("./src/verifyTokenOwned");
+exports.updateTokensOwned = require("./src/updateTokensOwned");
