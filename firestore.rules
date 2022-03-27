@@ -3,42 +3,33 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
       allow create: if false;
-
       allow delete: if request.auth != null 
                     && request.auth.uid == userId;
-
       allow update: if request.auth != null 
                     && request.auth.uid == userId
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
                       ['displayName', 'bio', 'personalLink','profileImage','coverImage'])
                     && request.resource.data.displayName.size() < 50
-                    && request.resource.data.bio.size() < 160;
-                            
+                    && request.resource.data.bio.size() < 160;                       
       allow read: if true;
     }
      match /communities/{cId} {
       allow create: if false;
-
       allow delete: if false;
-
-      allow update: if false;
-                            
+      allow update: if false;                      
       allow read: if request.auth != null;
     }
     // Do check of tokens
     match /postPreviews/{postId} {
       allow create: if request.auth != null;
-
       allow delete: if false;
-
-      allow update: if false;
-                            
+      allow update: if false;                      
       allow read: if request.auth != null;
     }
 
     match /posts/{postId} {
       function meetsTokenRequirements() {
-      	let postData = get(/databases/$(database)/documents/posts/$(postId));
+      	let postData = get(/databases/$(database)/documents/postPreviews/$(postId));
         let userData = get(/databases/$(database)/documents/users/$(request.auth.uid));
         return postData.data.accessMinimumTokenBalance <= userData.data.tokensOwned[postData.data.accessTokenId];
       }

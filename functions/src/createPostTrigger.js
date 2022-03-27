@@ -10,7 +10,7 @@ async function fetchCommunity(cid) {
 /// Triggered by post collection create, this function initializes a new community
 /// in the community collection when the first post for a token is created.
 exports.createPost = functions.firestore
-  .document("posts/{docId}")
+  .document("postPreviews/{docId}")
   .onCreate(async (snap, context) => {
     const post = snap.data();
 
