@@ -15,7 +15,7 @@ exports.createPost = functions.firestore
     const post = snap.data();
 
     const { communityRef, communityDocSnap } = await fetchCommunity(
-      post.accessTokenId
+      post.accessId
     );
 
     if (!communityDocSnap.exists) {
