@@ -11,4 +11,4 @@ exports.commentActions = require("./src/commentActions");
 
 exports.createPostTrigger = require("./src/createPostTrigger");
 
-exports.updateTokensOwned = require("./src/updateTokensOwned");
+exports.updateAccountTokens = require("./src/updateAccountTokens");

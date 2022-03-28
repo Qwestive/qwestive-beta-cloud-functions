@@ -13,7 +13,7 @@ service cloud.firestore {
                     && request.resource.data.bio.size() < 160;                       
       allow read: if true;
     }
-     match /communities/{cId} {
+    match /communities/{cId} {
       allow create: if false;
       allow delete: if false;
       allow update: if false;                      
@@ -29,9 +29,13 @@ service cloud.firestore {
 
     match /posts/{postId} {
       function meetsTokenRequirements() {
-      	let postData = get(/databases/$(database)/documents/postPreviews/$(postId));
+      	let postPreview = get(/databases/$(database)/documents/postPreviews/$(postId));
         let userData = get(/databases/$(database)/documents/users/$(request.auth.uid));
-        return postData.data.accessMinimumTokenBalance <= userData.data.tokensOwned[postData.data.accessTokenId];
+        return 
+        	postPreview.data.minimumAccessBalance 
+							<= userData.data.tokensOwnedByMint[postPreview.data.accessId].ammountOwned
+          || postPreview.data.minimumAccessBalance
+          	<= userData.data.tokensOwnedByCollection[postPreview.data.accessId].length;
       }
 
       allow create: if request.auth != null;
