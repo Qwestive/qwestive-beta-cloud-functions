@@ -1,5 +1,6 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const util = require("./util");
 
 function verifyUserMeetsTokenRequirements(userData, postData) {
   // Check that provided user meets required token balance.
@@ -13,18 +14,6 @@ function verifyUserMeetsTokenRequirements(userData, postData) {
       "User does not meet minimum required token balance to vote on this post"
     );
   }
-}
-
-async function fetchAndValidateUser(userId) {
-  const userRef = admin.firestore().collection("users").doc(userId);
-  const userDocSnap = await userRef.get();
-  if (!userDocSnap.exists) {
-    throw new functions.https.HttpsError(
-      "not-found",
-      "Invalid user credentials"
-    );
-  }
-  return { userRef, userDocSnap };
 }
 
 async function fetchAndValidatePost(postId) {
@@ -52,7 +41,7 @@ exports.upVote = functions.https.onCall(async (data, context) => {
   const postId = data.postId;
 
   // Get current user
-  const { _, userDocSnap } = await fetchAndValidateUser(uid);
+  const { _, userDocSnap } = await util.fetchAndValidateUser(uid);
 
   // Get target post
   const { postRef, postDocSnap } = await fetchAndValidatePost(postId);
@@ -84,7 +73,7 @@ exports.downVote = functions.https.onCall(async (data, context) => {
   const postId = data.postId;
 
   // Get current user
-  const { _, userDocSnap } = await fetchAndValidateUser(uid);
+  const { _, userDocSnap } = await util.fetchAndValidateUser(uid);
 
   // Get target post
   const { postRef, postDocSnap } = await fetchAndValidatePost(postId);

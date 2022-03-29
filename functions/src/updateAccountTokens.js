@@ -1,24 +1,7 @@
 const functions = require("firebase-functions");
 const solana = require("@solana/web3.js");
 const admin = require("firebase-admin");
-const metaplex = require("@metaplex-foundation/mpl-token-metadata");
-
-function verifyUserAuthenticated(context) {
-  if (!context.auth) {
-    // Throwing an HttpsError so that the client gets the error details.
-    throw new functions.https.HttpsError(
-      "failed-precondition",
-      "The function must be called while authenticated."
-    );
-  }
-}
-
-function buildSolanaConnection() {
-  return new solana.Connection(
-    solana.clusterApiUrl("devnet"),
-    "confirmed"
-  );
-}
+const util = require("./util");
 
 /// Fetch balance of SPL tokens for a provided Public Key and connection (mainnet/devnet/etc).
 async function fetchSplTokenBalances(connection, publicKey) {
@@ -85,12 +68,6 @@ function generateNftCollectionId(collectionName, creatorMintAddresses) {
   return concat.hashCode().toString();
 }
 
-/// Generates metadata for a provided non-fungible token mint.
-async function generateNftMetadata(connection, mint) {
-  const tokenMetaPubkey = await metaplex.Metadata.getPDA(new solana.PublicKey(mint));
-  return metaplex.Metadata.load(connection, tokenMetaPubkey);
-}
-
 /// Given an array of non-fungible tokens, aggregates the non-fungible tokens
 /// into collections and returns a map where each key is a collection ID and the value
 /// is an object with all tokens that belong to such collection.
@@ -98,7 +75,7 @@ async function buildNftCollections(connection, tokens) {
   
   const metadataPromises = [];
   tokens.forEach((element, ) => {
-    metadataPromises.push(generateNftMetadata(connection, element.mint));
+    metadataPromises.push(util.fetchNftMetadata(connection, element.mint));
   });
   
   const metadata = await Promise.all(metadataPromises);
@@ -125,7 +102,7 @@ async function buildNftCollections(connection, tokens) {
 /// Returns a map with nonfungible token collections owned by provided public key.
 /// Each key in the map corresponds to an NFT collection ID, and the value to data about the collection.
 async function getAccountNonFungibleTokensByCollection(publicKey) {
-  const connection = buildSolanaConnection();
+  const connection = util.createSolanaConnectionConfig();
   const [, nonFungibleTokens] = await fetchSplTokenBalances(connection, publicKey);
   return buildNftCollections(connection, nonFungibleTokens);
 }
@@ -133,7 +110,7 @@ async function getAccountNonFungibleTokensByCollection(publicKey) {
 /// Updates tokensOwnedByCollection field in DB and returns the object set in the DB.
 exports.updateAccountNonFungibleTokens = functions.https.onCall(async (data, context) => {
 
-  verifyUserAuthenticated(context);
+  util.verifyUserAuthenticated(context);
 
   const nonFungibleTokenCollections = await getAccountNonFungibleTokensByCollection(context.auth.uid);
   const response = {
@@ -157,7 +134,7 @@ exports.updateAccountNonFungibleTokens = functions.https.onCall(async (data, con
 /// Returns a map with fungible tokens owned by provided public key.
 /// Each key in the map corresponds to a token's mint, and the value to data about the token.
 async function getAccountFungibleTokensByMint(publicKey) {
-  const connection = buildSolanaConnection();
+  const connection = util.createSolanaConnectionConfig();
   const [fungibleSplTokens, ] = await fetchSplTokenBalances(connection, publicKey);
   const solBalance = await connection.getBalance(new solana.PublicKey(publicKey));
   const fungibleTokens = fungibleSplTokens.set('SOL', { isFungible: true, mint: 'SOL', ammountOwned: solBalance / solana.LAMPORTS_PER_SOL });
@@ -167,7 +144,7 @@ async function getAccountFungibleTokensByMint(publicKey) {
 /// Updates tokensOwnedByMint field in DB and returns the object set in the DB.
 exports.updateAccountFungibleTokens = functions.https.onCall(async (data, context) => {
 
-  verifyUserAuthenticated(context);
+  util.verifyUserAuthenticated(context);
 
   const fungibleTokens = await getAccountFungibleTokensByMint(context.auth.uid);
   const response = {
