@@ -28,6 +28,27 @@ async function fetchAndValidateUser(userId) {
   return { userRef, userDocSnap };
 }
 
+/// Retrieves post with provided ID from Firestore and returns associated 
+/// document ref and document snapshot.
+async function fetchAndValidatePost(postId) {
+  if (!(typeof postId === "string" || postId instanceof String)) {
+    // Throwing an HttpsError so that the client gets the error details.
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Provided Post ID is not a valid string"
+    );
+  }
+  const postRef = admin.firestore().collection("postPreviews").doc(postId);
+  const postDocSnap = await postRef.get();
+  if (!postDocSnap.exists) {
+    throw new functions.https.HttpsError(
+      "not-found",
+      `Provided Post ID: ${postId} does not exist`
+    );
+  }
+  return { postRef, postDocSnap };
+}
+
 /// Builds a connection object to Solana network.
 function createSolanaConnectionConfig() {
   return new solana.Connection(
@@ -42,4 +63,4 @@ async function fetchNftMetadata(connection, mint) {
   return metaplex.Metadata.load(connection, tokenMetaPubkey);
 }
 
-module.exports = { verifyUserAuthenticated, createSolanaConnectionConfig, fetchNftMetadata, fetchAndValidateUser };
+module.exports = { verifyUserAuthenticated, fetchAndValidateUser, fetchAndValidatePost, createSolanaConnectionConfig, fetchNftMetadata };

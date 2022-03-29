@@ -3,6 +3,7 @@ const admin = require("firebase-admin");
 const util = require("./util");
 const solana = require("@solana/web3.js");
 
+/// Fetches document from communities collection in DB.
 async function fetchCommunity(cid) {
   const communityRef = admin.firestore().collection("communities").doc(cid);
   const communityDocSnap = await communityRef.get();
@@ -19,8 +20,11 @@ async function getTokenData(mint) {
       isFungible: true
     };
   }
-  const res = await connection.getParsedAccountInfo(new solana.PublicKey(mint));
-  const { supply, decimals } = res.value?.data?.parsed?.info;
+  const tokenAccountInfo = await connection.getParsedAccountInfo(new solana.PublicKey(mint));
+  if (tokenAccountInfo === undefined) {
+    throw new functions.https.HttpsError('Provided community ID is linked to an invalid token mint.');
+  }
+  const { supply, decimals } = tokenAccountInfo.value?.data?.parsed?.info;
   const isFungible = supply > 1 && decimals > 0;
   if (isFungible) {
     return {
@@ -39,7 +43,11 @@ async function getTokenData(mint) {
   };
 }
 
-async function getTokenMintFromId(userId, postAccessId) {
+/// Returns a token mint for a provided post accessId. If post access ID corresponds to a
+/// fungible token, then the post access ID equals the token's mint. If the post access ID
+/// corresponds to an NFT collection ID, then the mint of a token within that collection
+/// is returned.
+async function getTokenMintFromPostAccessId(userId, postAccessId) {
   const { _, userDocSnap } = await util.fetchAndValidateUser(userId);
 
   const fungibleTokensForAccessId = userDocSnap.data().tokensOwnedByMint[postAccessId];
@@ -55,10 +63,11 @@ async function getTokenMintFromId(userId, postAccessId) {
   throw new functions.https.HttpsError('Author does not have sufficient funds to create post for specified token or token collection.');
 }
 
+/// Creates a new community object to store in Firestore DB.
 async function createCommunity(communityRef, post) {
   try {
     // Get current user
-    const tokenMint = await getTokenMintFromId(post.authorUserId, post.accessId);
+    const tokenMint = await getTokenMintFromPostAccessId(post.authorUserId, post.accessId);
     const tokenData = await getTokenData(tokenMint);
 
     const categories = post.category !== "" ? [{ name: post.category, count: 1 }] : [];
