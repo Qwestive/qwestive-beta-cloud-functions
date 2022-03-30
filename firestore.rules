@@ -31,11 +31,12 @@ service cloud.firestore {
       function meetsTokenRequirements() {
       	let postPreview = get(/databases/$(database)/documents/postPreviews/$(postId));
         let userData = get(/databases/$(database)/documents/users/$(request.auth.uid));
+        let fungibleTokens = userData.data.tokensOwnedByMint[postPreview.data.accessId];
+        let nonFungibleTokens = userData.data.tokensOwnedByCollection[postPreview.data.accessId];
         return 
-        	postPreview.data.minimumAccessBalance 
-							<= userData.data.tokensOwnedByMint[postPreview.data.accessId].ammountOwned
-          || postPreview.data.minimumAccessBalance
-          	<= userData.data.tokensOwnedByCollection[postPreview.data.accessId].length;
+          (fungibleTokens != null && postPreview.data.minimumAccessBalance <= fungibleTokens.ammountOwned)
+          ||
+          (nonFungibleTokens != null && postPreview.data.minimumAccessBalance <= nonFungibleTokens.tokensOwned.size());
       }
 
       allow create: if request.auth != null;
