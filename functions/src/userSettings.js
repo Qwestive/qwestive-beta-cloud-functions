@@ -1,10 +1,13 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const util = require("./util");
 
 const USERNAMEMAXLENGTH = 20;
 const USERNAMEMINLENGTH = 4;
 
 exports.editUserName = functions.https.onCall(async (data, context) => {
+  util.verifyUserAuthenticated(context);
+
   const newUserName = data;
   // userName not valid string
   if (!(typeof newUserName === "string" || newUserName instanceof String)) {
@@ -12,15 +15,6 @@ exports.editUserName = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError(
       "invalid-argument",
       "The function must be called with a string newUserName"
-    );
-  }
-
-  // user not auth when calling the function
-  if (!context.auth) {
-    // Throwing an HttpsError so that the client gets the error details.
-    throw new functions.https.HttpsError(
-      "failed-precondition",
-      "The function must be called " + "while authenticated."
     );
   }
 
