@@ -63,4 +63,21 @@ async function fetchNftMetadata(connection, mint) {
   return metaplex.Metadata.load(connection, tokenMetaPubkey);
 }
 
-module.exports = { verifyUserAuthenticated, fetchAndValidateUser, fetchAndValidatePost, createSolanaConnectionConfig, fetchNftMetadata };
+// When provided with user data and prost data from the DB, it verifies if provided user
+// has access to the provided post.
+function verifyUserMeetsTokenRequirements(userData, postData) {
+  // Check that provided user meets required token balance.
+  const fungibleTokensOwned = userData.tokensOwnedByMint[postData.accessId]?.ammountOwned;
+  const nonFungibleTokensOwned = userData.tokensOwnedByCollection[postData.accessId]?.tokensOwned?.length;
+  const hasFungibleAccess = fungibleTokensOwned && fungibleTokensOwned > postData.minimumAccessBalance;
+  const hasNonFungibleAccess = nonFungibleTokensOwned && nonFungibleTokensOwned > postData.minimumAccessBalance;
+  if (!hasFungibleAccess && !hasNonFungibleAccess) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "User does not meet minimum required token balance to vote on this post"
+    );
+  }
+}
+
+module.exports = { verifyUserAuthenticated, fetchAndValidateUser, fetchAndValidatePost, createSolanaConnectionConfig, fetchNftMetadata,
+verifyUserMeetsTokenRequirements };

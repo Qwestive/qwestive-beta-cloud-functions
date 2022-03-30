@@ -2,20 +2,6 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const util = require("./util");
 
-function verifyUserMeetsTokenRequirements(userData, postData) {
-  // Check that provided user meets required token balance.
-  if (
-    postData.accessToken in userData.tokensOwned &&
-    postData.accessMinimumTokenBalance <=
-      userData.tokensOwned[postData.accessToken]
-  ) {
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      "User does not meet minimum required token balance to vote on this post"
-    );
-  }
-}
-
 /// Add current user to the upvote list of a post.
 exports.upVote = functions.https.onCall(async (data, context) => {
   const uid = context.auth.uid;
@@ -28,7 +14,7 @@ exports.upVote = functions.https.onCall(async (data, context) => {
   const { postRef, postDocSnap } = await util.fetchAndValidatePost(postId);
 
   // Verify that user has access to post.
-  verifyUserMeetsTokenRequirements(userDocSnap.data(), postDocSnap.data());
+  util.verifyUserMeetsTokenRequirements(userDocSnap.data(), postDocSnap.data());
 
   // Add user to upVote list if user is not already in upvote list.
   const upVotes = postDocSnap.data().upVoteUserIds;
@@ -60,7 +46,7 @@ exports.downVote = functions.https.onCall(async (data, context) => {
   const { postRef, postDocSnap } = await util.fetchAndValidatePost(postId);
 
   // Verify that user has access to post.
-  verifyUserMeetsTokenRequirements(userDocSnap.data(), postDocSnap.data());
+  util.verifyUserMeetsTokenRequirements(userDocSnap.data(), postDocSnap.data());
 
   // Add user to up vote list if user is not already in upvote list.
   const downVotes = postDocSnap.data().downVoteUserIds;

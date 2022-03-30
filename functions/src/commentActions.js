@@ -2,17 +2,6 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const util = require("./util");
 
-function verifyUserMeetsTokenRequirements(userData, postData) {
-  // Check that provided user meets required token balance.
-  if (postData.accessToken in userData.tokensOwned
-      && postData.accessMinimumTokenBalance <= userData.tokensOwned[postData.accessToken]) {
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      "User does not meet minimum required token balance to vote on this post"
-    );
-  }
-}
-
 /// Retrieves comment with provided ID from Firestore and returns associated 
 /// document ref and document snapshot.
 async function fetchAndValidateComment(commentId) {
@@ -50,7 +39,7 @@ exports.upVote = functions.https.onCall(async (data, context) => {
   const {__, postDocSnap} = await util.fetchAndValidatePost(postId);
 
   // Verify that user has access to the post to which this comment is associated.
-  verifyUserMeetsTokenRequirements(userDocSnap.data(), postDocSnap.data());
+  util.verifyUserMeetsTokenRequirements(userDocSnap.data(), postDocSnap.data());
 
   // Add user to upVote list if user is not already in upvote list.
   const upVotes = commentDocSnap.data().upVoteUserIds;
@@ -86,7 +75,7 @@ exports.downVote = functions.https.onCall(async (data, context) => {
   const {__, postDocSnap} = await util.fetchAndValidatePost(postId);
 
   // Verify that user has access to post.
-  verifyUserMeetsTokenRequirements(userDocSnap.data(), postDocSnap.data()); 
+  util.verifyUserMeetsTokenRequirements(userDocSnap.data(), postDocSnap.data()); 
 
   // Add user to downvote list if user is not already in downvote list.
   const downVotes = commentDocSnap.data().downVoteUserIds;
