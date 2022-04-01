@@ -39,11 +39,77 @@ service cloud.firestore {
           (nonFungibleTokens != null && postPreview.data.minimumAccessBalance <= nonFungibleTokens.tokensOwned.size());
       }
 
+      function isUpdatingField(fieldName) {
+        return (!(fieldName in resource.data) && fieldName in request.resource.data) || resource.data[fieldName] != request.resource.data[fieldName];
+      }
+
+      function isPoll() {
+      	return resource.data.postType == 'poll';
+      }
+      
+      /// Check poll post contents are present in update but are unchanged and also
+      /// checks that only the field associated to a single option was changed.
+      function pollContentsUnchanged() {
+        return request.resource.data.keys().size() == 4 
+            && 'postType' in request.resource.data.keys() && !isUpdatingField('postType')
+            && 'content' in request.resource.data.keys() && !isUpdatingField('content')
+            && 'options' in request.resource.data.keys() && !isUpdatingField('options');
+      }
+
+      /// Counts the number of times the UID occurs in the resulting vote list
+      ///
+      /// If the vote list did not change.
+      /// If the UID was added or removed from the vote list.
+      /// If the vote list changed in any other way returns 2 (indicating there was an invalid change.)
+      function countChanges(oid, UID) {
+        let oldList = oid in resource.data ? resource.data[oid] : [];
+        let newList = oid in request.resource.data ? request.resource.data[oid] : [];
+        /// Count number of changes on option with input id.
+				let result = (newList == oldList) && !(UID in oldList) ? 0
+          : ((newList == oldList && UID in oldList) ? 1
+        	:  ((newList.toSet().difference(oldList.toSet()) == [UID].toSet()) ? 1
+        	: 	2));
+        return result;
+      }
+      
+      /// Each option is associated with a top level field in the document, with key equal to
+      /// the option ID, which contains a list with all the votes for that option.
+      ///
+      /// This function checks such fields for all options and asserts that only a single such
+      /// field was changed (only 1 option was voted on). It also checks that changes for the
+      /// updated option only consisted of adding or removing the current user's UID from the
+      /// list of voters.
+      function meetsOptionUpdateRequirements() {
+      	let UID = request.auth.uid;
+        let numOptions = resource.data.options.size();
+				return (numOptions > 0 ? countChanges(request.resource.data.options[0].id, UID) : 0)
+        			+ (numOptions > 1 ? countChanges(request.resource.data.options[1].id, UID) : 0)
+              + (numOptions > 2 ? countChanges(request.resource.data.options[2].id, UID) : 0)
+              + (numOptions > 3 ? countChanges(request.resource.data.options[3].id, UID) : 0)
+              + (numOptions > 4 ? countChanges(request.resource.data.options[4].id, UID) : 0)
+              + (numOptions > 5 ? countChanges(request.resource.data.options[5].id, UID) : 0)
+              + (numOptions > 6 ? countChanges(request.resource.data.options[6].id, UID) : 0)
+              + (numOptions > 7 ? countChanges(request.resource.data.options[7].id, UID) : 0)
+              + (numOptions > 8 ? countChanges(request.resource.data.options[8].id, UID) : 0)
+              + (numOptions > 9 ? countChanges(request.resource.data.options[9].id, UID) : 0)
+              == 1;
+      }
+
+      function meetsPollUpdateRequirements() {
+        return isPoll() && pollContentsUnchanged() && meetsOptionUpdateRequirements();
+      }
+
+      function meetsArticleUpdateRequirements() {
+        return false;
+      }
+
       allow create: if request.auth != null;
 
       allow delete: if true;
 
-      allow update: if true;
+      allow update: if request.auth != null
+                        && meetsTokenRequirements()
+                        && (meetsPollUpdateRequirements() || meetsArticleUpdateRequirements());
                             
       allow read: if request.auth != null && meetsTokenRequirements();
     }
